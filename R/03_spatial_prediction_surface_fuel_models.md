@@ -23,7 +23,6 @@ skip_model_prediction = T
 
 suppressPackageStartupMessages({
 library(stars)
-library(raster)
 library(dplyr)
 library(caret)
 library(CAST)
