@@ -36,25 +36,29 @@ knitr::opts_chunk$set(cache=T, warning = F, message = F)
 
 ```{r warning=FALSE}
 if (skip_training_data_extraction){
-  haard = readRDS("data/cbd_training_data.rds") |> 
+  haard = readRDS(file.path(getwd(),"data",
+                            "cbd_training_data.rds")) |> 
     st_sf() |> 
     select(-c(PlotID, FC_CBH, FC_SH, FC_CC))
 } else {
   
-  predictors_path = "data/predictors_haard_10m.rds"
+  predictors_path = file.path(getwd(),"data","predictors_haard_10m.rds")
   if (! file.exists(predictors_path)){
     download.file("https://uni-muenster.sciebo.de/s/XPEk2uBClq2v3ob/download",
                   predictors_path)
   } else print("Predictor data already on disk.")
   
-  p = readRDS("data/predictors_haard_10m.rds") 
+  p = readRDS(predictors_path) 
   dim(p)
   
-  haard = st_read("data/haard_field_plot_locations.csv", crs=4326, quiet=T,
-                  options=c("X_POSSIBLE_NAMES=lon","Y_POSSIBLE_NAMES=lat")) |>
+  haard = st_read(file.path(getwd(),"data",
+                            "haard_field_plot_locations.csv"), 
+                  crs=4326, quiet=T,
+                  options=c("X_POSSIBLE_NAMES=lon",
+                            "Y_POSSIBLE_NAMES=lat")) |>
     select(plot_id, dom_spp)
   
-  FC = read.csv("data/haard_cbd_fuelcalc.csv")[-1,] |> 
+  FC = read.csv(file.path(getwd(),"data","haard_cbd_fuelcalc.csv"))[-1,] |> 
     select(PlotID, preCBD, preCBH, preSH, preCC) |> 
     mutate(PlotID = sub(x=PlotID, "-Inventory", "") |> as.numeric(),
            across(2:5, as.numeric)) |> 
@@ -63,7 +67,7 @@ if (skip_training_data_extraction){
     glimpse()
 }
 
-ft = read_stars("results/haard_surface_fuel_map.tif") |> 
+ft = read_stars(file.path(getwd(),"results","haard_surface_fuel_map.tif")) |> 
   setNames("FuelType")
 ```
 
@@ -248,7 +252,7 @@ coef(glm_ridge$finalModel)[,lambda_index] |>
 
 ```{r}
 if(skip_model_prediction){
-  (cbd_glm_st = read_stars("results/haard_CBD.tif") |> 
+  (cbd_glm_st = read_stars(file.path(getwd(),"results","haard_CBD.tif")) |> 
      setNames("CBD"))
 } else {
   cbd_glm = predict(glm_ridge, newdata = newx) |> 
@@ -271,7 +275,7 @@ AOA
 
 ```{r}
 if(skip_model_prediction){
-  (AOA = read_stars("results/AOA_haard_CBD.tif") |> 
+  (AOA = read_stars(file.path(getwd(),"results","AOA_haard_CBD.tif")) |> 
      setNames("AOA"))
 } else {
   cl <- makeCluster(6)

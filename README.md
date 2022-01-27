@@ -27,12 +27,12 @@ You can view code [here on Github](R/02_LiDAR_processing.md) or run the process 
 ### 3. Predict surface fuel types
 
 Field sampling produced three custom fire behavior fuel models, each representing one dominant species (pine, red oak, and beech). To connect fuel models and their spatial distribution we classify these species using a Random Forest model and a range of LiDAR- and satellite-based predictor variables.
-You can view code and outputs [here on Github](R/03_spatial_prediction_surface_fuel_models.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main).
+You can view code and outputs [here on Github](R/03_spatial_prediction_surface_fuel_models.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main?urlpath=rstudio). Make sure to click *Session > Clear Workspace* and *Session > Restart R* before you run the analysis to prevent errors from artifacts of the last step.
 
 ### 4. Predict Crown Bulk Density (CBD)
 
 CBD is relevant for crown fire spread calculation but other than the remaining canopy fuel variables it is difficult to measure in the field. We use allometric equations to estimate CBD from field measurements of other forest structure variables. This data serves as reference for a Ridge regression model. Again, modeling is supported by LiDAR- and satellite-based predictor variables. 
-You can view code and outputs [here on Github](R/04_spatial_prediction_crown_bulk_density.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main).
+You can view code and outputs [here on Github](R/04_spatial_prediction_crown_bulk_density.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main/?urlpath=rstudio). Make sure to click *Session > Clear Workspace* and *Session > Restart R* before you run the analysis to prevent errors from artifacts of the last step.
 
 ### 5. Run fire behavior and spread model
 

@@ -14,14 +14,15 @@ LiDAR data forms the basis for various forest structure regression models as the
 
 ```{r}
 dir = "data/lidar/"
-if (! dir.exists(file.path(dir, "download"))) 
+if (! dir.exists(file.path(dir, "download"))){ 
   dir.create(file.path(dir, "download"), recursive = T)
+}
 
 URL <- "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/"
 relevant <- readLines("data/relevant_laz_files_Haard.txt") # 90 tiles
 
 # The line below reduces the number of tiles to 1
-# which results in a ~250 mb download. 
+# which results in a ~195 mb download. 
 # Remove it to download all 90 tiles covering the Haard.
 relevant = relevant[30]
 
@@ -48,7 +49,7 @@ library(lidR)
 library(future)
 library(dplyr)
 library(terra)
-source("R/02_lidar_metrics.R") # contains definitions of metrics to compute
+source("02_lidar_metrics.R") # contains definitions of metrics to compute
 
 RES = 10  # output raster resolution
 ncores = 4  # number of cores for parallel processing
