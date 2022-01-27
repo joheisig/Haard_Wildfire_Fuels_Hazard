@@ -1,0 +1,295 @@
+---
+title: "Surface Fuel Classification in the Haard Forest"
+author: "Johannes Heisig"
+output: github_document
+---
+
+This analysis identifies 3 fuel types in a managed temperate forest dominated by either Scots pine, red oak or European beech. Field samples are used for model training. Predictor data comes from airborne LiDAR and Sentinel-1 & -2.
+
+> NOTE:
+> Binder is great for reproducing analysis in R. However, it has RAM restrictions, which can be a problem for large remote sensing data stacks. Below we provide switches for this program, which allow you to decide, whether you want to run all analysis steps or skip some of the computationally expensive ones (e.g. extracting raster values). Alternatively, intermediate results are loaded from existing files. You may choose to download this repository and run operations locally instead.
+
+```{r}
+skip_training_data_extraction = T
+skip_model_training = T
+skip_model_prediction = T
+
+suppressPackageStartupMessages({
+library(stars)
+library(raster)
+library(dplyr)
+library(caret)
+library(CAST)
+select = dplyr::select
+library(cvms)
+library(doParallel)
+})
+knitr::opts_chunk$set(cache=T, warning = F, message = F)
+```
+
+## Prepare training and predictor data
+
+### Read
+
+```{r}
+if (skip_training_data_extraction){
+  train = readRDS("data/surface_fuels_training_data.rds") |> 
+    st_sf()
+} else {
+  # download predictor data
+  #
+  #
+  
+  p = read_rds("data/predictors_haard_10m.rds")
+  t = st_read("data/LCC_train.geojson", quiet=T) |> 
+    st_set_crs(st_crs(p)) |> 
+    st_crop(p) |> 
+    mutate(spp = case_when(spp %in% c("Agri", "Bare", 
+                                      "Urban", "Water") ~ "other",
+                           TRUE ~ spp)) |> 
+    print()
+  
+  # extract predictors at training locations
+  train = p[t] |> st_as_sf()
+  
+  # add species labels
+  train = st_join(train, t) %>% st_drop_geometry()
+}
+
+plot(train)
+dim(train) # 304 observations (rows) in 120 variables (columns)
+table(train$spp) # distribution of classes
+train = train %>% st_drop_geometry()
+```
+
+
+### Fill NAs
+
+```{r}
+# Many LiDAR metrics have NAs in non-vegetated areas. This leads to problems in model building and prediction. NAs are therefore replaced with zeros.
+tr = train %>% replace(is.na(.), 0)
+if (!skip_training_data_extraction) p = p %>% replace(is.na(.), 0)
+```
+
+### Split
+
+Stratified random sample to keep species class balanced.
+
+```{r}
+set.seed(1)
+train = tr |> group_by(spp) |> sample_frac(0.7) |> ungroup()
+test = tr |> setdiff(train)
+```
+
+## Modeling
+
+### Model training
+```{r, eval=FALSE}
+# NOTE:
+# If you choose to run the Forward-Feature_selection process, be prepared that
+# this may take 2-3 hours as ~ 14.000 combinations of predictor variables are
+# tested. If run you will find the progress log in the drop-down window below the # code.
+
+if (skip_model_training){ 
+  f = readRDS("results/models/ffs_model_4class.rds")
+  
+} else {
+  tc = trainControl("cv", 5) # set up 5-fold random CV
+  
+  cl <- makeCluster(6) # run in parallel
+  registerDoParallel(cl)
+  
+  set.seed(111)
+  f = ffs(select(train, -spp),    # Forward-Feature-Selection
+          as.factor(train$spp),
+          method = "rf", 
+          trControl = tc,
+          ntree = 500,
+          tuneGrid = data.frame("mtry"=c(2,3,5,7,9,11)),
+          verbose = T)
+  
+  stopCluster(cl)
+} 
+  
+```
+
+<details>
+  <summary>show FFS progress</summary>
+```{r echo=FALSE}
+if (skip_model_training){ 
+  f = readRDS("results/models/ffs_model_4class.rds")
+  
+} else {
+    tc = trainControl("cv", 5)
+    cl <- makeCluster(6)
+    registerDoParallel(cl)
+    set.seed(111)
+    system.time({
+      f = ffs(select(train, -spp),
+              as.factor(train$spp),
+              method = "rf",
+              trControl = tc,
+              ntree = 500,
+              tuneGrid = data.frame("mtry"=c(2,3,5,7,9,11)),
+              verbose = T)
+    })
+    saveRDS(f, "results/models/ffs_model_4class.rds")
+    stopCluster(cl)
+}
+```   
+</details> 
+
+### Model evaluation {.tabset .tabset-fade .tabset-pills}
+
+#### FFS variable selection plot
+```{r, echo=FALSE, cache=FALSE}
+plot_ffs(f, lwd=0.4, alpha=0.3) 
+```
+
+The FFS process found an optimal combination of 5 predictor variables.
+
+#### Variable Importance
+```{r, echo=FALSE, cache=FALSE} 
+plot(varImp(f, scale = F)) 
+```
+
+Temporal aggregates of Sentinel-2 bands as well as LiDAR-derived forest structure metrics were selected.
+
+#### Model overview
+```{r, echo=FALSE, cache=FALSE} 
+f 
+```
+
+The best model has a hyperparamter `mtry` of 2.
+
+#### Model confusion matrix
+```{r, echo=FALSE, cache=FALSE} 
+f$finalModel$confusion |> round(3) 
+```
+
+
+```{r include=FALSE, cache=FALSE}
+n = length(f$finalModel$xNames)
+m = f$finalModel$mtry
+acc = f$results$Accuracy[f$results$mtry == m]
+kap = f$results$Kappa[f$results$mtry == m]
+```
+
+### Comparison: traditional Random Forest approach {.tabset .tabset-fade .tabset-pills}
+#### Code
+```{r}
+tc = trainControl("cv", 5)
+cl <- makeCluster(6)
+registerDoParallel(cl)
+set.seed(1)
+model_all <- train(select(train, -spp),
+                   as.factor(train$spp),
+                   method = "rf", num.trees = 500,
+                   tuneGrid = data.frame("mtry"=f$finalModel$mtry), 
+                   importance = TRUE,
+                   trControl = tc)
+stopCluster(cl)
+```
+
+#### Variable Importance
+```{r, echo=FALSE} 
+plot(varImp(model_all, scale = F), top=10)
+```
+
+#### Model overview
+```{r, echo=FALSE} 
+model_all 
+```
+
+#### Model confusion matrix
+```{r, echo=FALSE} 
+model_all$finalModel$confusion |> round(3) 
+```
+
+```{r, include=FALSE}
+acc2 = model_all$results$Accuracy
+kap2 = model_all$results$Kappa
+```
+
+### Conclusion
+
+Forward Feature Selection was able to reduce the number of predictor variables to `r n` (vs. 119) and still increase accuracy by ~`r round((acc-acc2)*100, 1)`\% (`r round(acc*100,1)`\% vs. `r round(acc2*100,1)`\%) and Kappa by ~`r round((kap-kap2)*100, 1)`\% (`r round(kap*100,1)`\% vs. `r round(kap2*100,1)`\%).
+
+## Validation
+
+```{r}
+pred = predict(f, newdata = test)
+confusionMatrix(pred, as.factor(test$spp))
+```
+
+## Surface fuel model prediction
+
+```{r}
+if (skip_model_prediction){
+  lcc = read_stars("results/haard_surface_fuel_map.tif") |> 
+    setNames("prediction") |> 
+    mutate(prediction = case_when(prediction == 4 ~ "Non-Burnable",
+                                prediction == 2 ~ "Pine",
+                                prediction == 1 ~ "Beech",
+                                prediction == 3 ~ "Red Oak",
+                                TRUE ~ as.character(prediction)) |> 
+             factor(levels = c("Beech", "Pine", 
+                               "Red Oak", "Non-Burnable")))
+} else {
+  if (!file.exists("")) download.file()
+  #download predictor
+  p = read_rds("data/predictors_haard_10m.rds") |> 
+    replace(is.na(.), 0)
+  
+  # spatial prediction
+  lcc = predict(split(p, 3), f)
+  
+  lcc = lcc %>% 
+    mutate(pred_sum = case_when(prediction %in% c("other") ~ "Non-Burnable",
+                                prediction == "Pi" ~ "Pine",
+                                prediction == "Be" ~ "Beech",
+                                prediction == "RO" ~ "Red Oak",
+                                TRUE ~ as.character(prediction)),
+           pred_sum = factor(pred_sum, levels = c("Beech", "Pine", 
+                                                  "Red Oak", "Non-Burnable")))
+  write_stars(lcc, layer = 2, overwrite=T,
+              dsn = "results/haard_surface_fuel_map.tif")
+}
+
+lcc
+```
+
+
+Plot
+```{r}
+gg = ggplot() +
+  coord_equal() +
+  theme_void() +
+  scale_x_discrete(expand=c(0,0)) +
+  scale_y_discrete(expand=c(0,0))
+
+gg + 
+  geom_stars(data=lcc[1,,]) +
+  scale_fill_manual(values=c("gold2", "springgreen4", 
+                             "palevioletred1", "grey80"), 
+                    name="Fuel Models") 
+```
+
+Area of Applicability
+
+```{r}
+if (skip_model_prediction){
+  AOA = read_stars("results/AOA_haard_surface_fuel_map.tif") |> 
+    setNames("AOA")
+} else {
+  AOA = aoa(model=f, newdata=p)
+  write_stars(AOA["AOA"],"results/tifs/AOA_haard_fuelmodel.tif")
+}
+
+AOA = mutate(AOA, AOA = factor(AOA, levels = c(0,1), 
+                               labels = c("outside","inside")))
+
+gg +
+  geom_stars(data = AOA["AOA"]) +
+  scale_fill_manual(values=c("firebrick","lightgreen"), name = "AOA")
+```

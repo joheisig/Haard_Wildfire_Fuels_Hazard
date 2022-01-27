@@ -1,0 +1,7 @@
+/data/lidar/*
+*predictors_haard*
+
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata

@@ -1,0 +1,15 @@
+base
+abind
+sf
+stars
+sp
+raster
+dplyr
+lattice
+ggplot2
+caret
+CAST
+cvms
+foreach
+iterators
+doParallel

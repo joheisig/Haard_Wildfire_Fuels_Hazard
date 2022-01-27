@@ -1,0 +1,16 @@
+base
+Matrix
+glmnet
+lattice
+ggplot2
+caret
+CAST
+dplyr
+tidyr
+abind
+sf
+stars
+foreach
+iterators
+doParallel
+patchwork
