@@ -40,9 +40,13 @@ if (skip_training_data_extraction){
     st_sf() |> 
     select(-c(PlotID, FC_CBH, FC_SH, FC_CC))
 } else {
-  # download predictor data
-  #
-  #
+  
+  predictors_path = "data/predictors_haard_10m.rds"
+  if (! file.exists(predictors_path)){
+    download.file("https://uni-muenster.sciebo.de/s/XPEk2uBClq2v3ob/download",
+                  predictors_path)
+  } else print("Predictor data already on disk.")
+  
   p = readRDS("data/predictors_haard_10m.rds") 
   dim(p)
   

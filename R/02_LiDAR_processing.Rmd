@@ -8,12 +8,15 @@ output: github_document
 knitr::opts_chunk$set(eval=F)
 ```
 
-
 LiDAR data forms the basis for various forest structure regression models as the vertical distribution of laser returns describes tree characteristics well. Here we use open LiDAR data provided by and for the German state of Northrhine-Westfalia in ([description](https://www.bezreg-koeln.nrw.de/brk_internet/geobasis/hoehenmodelle/3d-messdaten/index.html), [download](https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/)) to compute 78 metrics related to tree height, cover, and terrain at 10 meter resolution. Computation is facilitated by the `lidR` package. See the publication for more details. Data comes in 1x1 km tiles and in .laz format. Our study used 90 tiles covering the study area. This demo for reproducibility reasons, however, only uses 1 tile to limit computational costs. If desired one can process all 90 tiles, which are listed in *data/relevant_laz_files_Haard.txt*, by following instructions in the Download sections. We recommend to run it on a local machine.
 
 ## Download
 
 ```{r}
+dir = "data/lidar/"
+if (! dir.exists(file.path(dir, "download"))) 
+  dir.create(file.path(dir, "download"), recursive = T)
+
 URL <- "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/"
 relevant <- readLines("data/relevant_laz_files_Haard.txt") # 90 tiles
 
@@ -23,7 +26,7 @@ relevant <- readLines("data/relevant_laz_files_Haard.txt") # 90 tiles
 relevant = relevant[30]
 
 links = paste0(URL, relevant)
-files <- paste0("data/lidar/download/", relevant)
+files <- paste0(dir,"download/", relevant)
 
 for (i in 1:length(links)) {
   if (! file.exists(files[i])){
@@ -35,7 +38,6 @@ for (i in 1:length(links)) {
 ## Setup
 
 ```{r}
-dir = "data/lidar/"
 dirs = paste0(dir, 
               c('01_normalized', '02_height_metrics', 
                 '03_chm', '04_cover_metrics', 

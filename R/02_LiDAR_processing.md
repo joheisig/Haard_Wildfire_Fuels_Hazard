@@ -14,14 +14,16 @@ the publication for more details. Data comes in 1x1 km tiles and in .laz
 format. Our study used 90 tiles covering the study area. This demo for
 reproducibility reasons, however, only uses 1 tile to limit
 computational costs. If desired one can process all 90 tiles, which are
-listed in *data/relevant_laz_files_Haard.txt*, by foolowing instructions
-in the Download sections. Alternatively, you skip this process and
-download the complete predictor data for this study [here]().
-**Zenodo-link**
+listed in *data/relevant_laz_files_Haard.txt*, by following instructions
+in the Download sections. We recommend to run it on a local machine.
 
 ## Download
 
 ``` r
+dir = "data/lidar/"
+if (! dir.exists(file.path(dir, "download"))) 
+  dir.create(file.path(dir, "download"), recursive = T)
+
 URL <- "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/"
 relevant <- readLines("data/relevant_laz_files_Haard.txt") # 90 tiles
 
@@ -31,7 +33,7 @@ relevant <- readLines("data/relevant_laz_files_Haard.txt") # 90 tiles
 relevant = relevant[30]
 
 links = paste0(URL, relevant)
-files <- paste0("data/lidar/download/", relevant)
+files <- paste0(dir,"download/", relevant)
 
 for (i in 1:length(links)) {
   if (! file.exists(files[i])){
@@ -43,7 +45,6 @@ for (i in 1:length(links)) {
 ## Setup
 
 ``` r
-dir = "data/lidar/"
 dirs = paste0(dir, 
               c('01_normalized', '02_height_metrics', 
                 '03_chm', '04_cover_metrics', 
