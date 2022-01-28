@@ -6,12 +6,12 @@ This repository contains code and data to reproduce the analysis described in
 
 The workflow includes the following steps:
 
-1. Process satellite-based predictor data <img src="https://datalab.ucdavis.edu/wp-content/uploads/2021/01/earth-engine-logo.png" title="GEE" width="20"/>
-2. Process LiDAR-based predictor data including canopy fuel variables <img src="https://opensenselabs.com/sites/default/files/inline-images/Screen%20Shot%202019-02-22%20at%202.13.40%20PM.png" alt="drawing" title="R" width="20"/>
-3. Predict surface fuel types <img src="https://opensenselabs.com/sites/default/files/inline-images/Screen%20Shot%202019-02-22%20at%202.13.40%20PM.png" alt="drawing" title="R" width="20"/>
-4. Predict Crown Bulk Density <img src="https://opensenselabs.com/sites/default/files/inline-images/Screen%20Shot%202019-02-22%20at%202.13.40%20PM.png" alt="drawing" title="R" width="20"/>
+1. Process satellite-based predictor data <img src="https://image.pngaaa.com/772/546772-middle.png" title="GEE" width="35"/>
+2. Process LiDAR-based predictor data including canopy fuel variables <img src="https://www.clipartmax.com/png/middle/13-137348_logo-r-programming.png" alt="drawing" title="R" width="25"/>
+3. Predict surface fuel types <img src="https://www.clipartmax.com/png/middle/13-137348_logo-r-programming.png" alt="drawing" title="R" width="25"/>
+4. Predict Crown Bulk Density <img src="https://www.clipartmax.com/png/middle/13-137348_logo-r-programming.png" alt="drawing" title="R" width="25"/>
 5. Run fire behavior and spread model to derive fire hazard :fire: :globe_with_meridians:
-6. Plot figures from the publication <img src="https://opensenselabs.com/sites/default/files/inline-images/Screen%20Shot%202019-02-22%20at%202.13.40%20PM.png" alt="drawing" title="R" width="20"/>
+6. Plot figures from the publication <img src="https://www.clipartmax.com/png/middle/13-137348_logo-r-programming.png" alt="drawing" title="R" width="25"/>
 
 All individual steps are individually reproducible and described in more detail below.
 
