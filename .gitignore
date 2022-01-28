@@ -1,5 +1,6 @@
 /data/lidar/*
 *predictors_haard*
+FlamMap_files/FlamMap_output
 
 .Rproj.user
 .Rhistory
