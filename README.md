@@ -73,6 +73,8 @@ All figures in our paper can be reproduced (even without running analysis steps 
 - wind station data and WindNinja outputs
 - fire behavior, conditional burn probability, and fire hazard
 
+Outputs in PNG format can be found in the `figures` directory.
+
 Feel free to contact `jheisig@uni-muenster.de` for questions or feedback!
 
 
