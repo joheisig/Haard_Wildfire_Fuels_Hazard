@@ -7,7 +7,7 @@ output: github_document
 This analysis predicts Crown Bulk Density, a canopy fuel variable relevant to crown fire spread. It is difficult to sample in the field and therefore estimated using measurements of other forest structure variables and allometric equations. Predictor data for this regression analysis comes from airborne LiDAR and Sentinel-1 & -2.
 
 > NOTE:
-> Binder is great for reproducing analysis in R. However, it has RAM restrictions, which can be a problem for large remote sensing data stacks. Below we provide switches for this program, which allow you to decide, whether you want to run all analysis steps or skip some of the computationally expensive ones (e.g. extracting raster values). Alternatively, intermediate results are loaded from existing files. You may choose to download this repository and run operations locally instead.
+> Binder is great for reproducing analysis in R. However, it has RAM restrictions, which can be a problem for large remote sensing data stacks. Below we provide switches for this program, which allow you to decide, whether you want to run all analysis steps or skip some of the computationally expensive ones (e.g. extracting raster values). Be prepared that Binder may crash when running complex tasks. Alternatively, intermediate results are loaded from existing files. You may choose to download this repository and run operations locally instead.
 
 ```{r}
 skip_training_data_extraction = T
@@ -207,9 +207,9 @@ glm_ridge = train(
 
 ### Validation log(CBD)
 
+Performance metrics
 ```{r}
 best_lambda = glm_ridge$bestTune$lambda
-glm_ridge$results[glm_ridge$results$lambda == best_lambda,]
 
 modelpred = glm_ridge |> 
   predict(s = best_lambda) |> 
@@ -217,24 +217,36 @@ modelpred = glm_ridge |>
 testpred = glm_ridge |> 
   predict(s = best_lambda, newdata = x_test) |> 
   exp() 
-print(round(testpred,3))
 
-R2(modelpred, y_train) # R2 (model prediction vs training data)
-R2(testpred, y_test) # R2 (prediction vs validation data)
+print(paste("R2 (model prediction vs training data) =", R2(modelpred, y_train)))
+print(paste("R2 (prediction vs validation data) =", R2(testpred, y_test)))
 
-RMSE(modelpred, y_train) # RMSE (model prediction vs training data)
-RMSE(testpred, y_test) # RMSE (prediction vs validation data)
-RMSE(mean(y_train), y_test) # RMSE (intercept only model)
+print(paste("RMSE (model prediction vs training data) =", RMSE(modelpred, y_train)))
+print(paste("RMSE (prediction vs validation data) =", RMSE(testpred, y_test)))
+print(paste("RMSE (intercept only model) =",RMSE(mean(y_train), y_test)))
+```
 
+Variable importance
+```{r}
 plot(varImp(glm_ridge), top=20) 
-shapiro.test(residuals(glm_ridge))
+```
 
+Residuals
+```{r}
+shapiro.test(residuals(glm_ridge))
 hist(residuals(glm_ridge))
+```
+
+Scatter plot
+```{r}
 plot(log(modelpred), log(y_train), 
      xlim=c(-4,-1), ylim=c(-4,-1))
 points(log(testpred),log(y_test), col="red")
 abline(0,1)
+```
 
+Coefficients
+```{r}
 lambda_index = which(glm_ridge$results$lambda == best_lambda)
 coef(glm_ridge$finalModel)[,lambda_index] |> 
   sort(decreasing = T)
@@ -272,7 +284,6 @@ hist(cbd_glm_st, breaks=100)
 ```
 
 AOA
-
 ```{r}
 if(skip_model_prediction){
   (AOA = read_stars(file.path(getwd(),"results","AOA_haard_CBD.tif")) |> 
@@ -288,7 +299,6 @@ if(skip_model_prediction){
 ```
 
 Plot
-
 ```{r, cache=FALSE}
 pcbd = ggplot() + 
   geom_stars(data = cbd_glm_st, downsample = 1) +
@@ -298,20 +308,26 @@ pcbd = ggplot() +
   scale_fill_viridis_c(direction = -1) +
   theme(legend.position = "bottom")
 
-AOA = AOA |> mutate(AOA = factor(AOA, levels = c(0,1), 
-                                 labels = c("outside", "inside")))
+AOA = c(AOA, cbd_glm_st) |> 
+  mutate(AOA = ifelse(is.na(CBD), 99, AOA) |> 
+           factor(levels = c(1,0,99),
+                  labels = c("inside","outside","NB")))
+
 paoa = ggplot() + 
   geom_stars(data = AOA["AOA"], downsample = 2) +
   coord_equal() + 
   scale_x_discrete(expand = c(0, 0), name="") +
   scale_y_discrete(expand = c(0, 0), name="") +
-  scale_fill_viridis_d(option = "E")+
+  scale_fill_manual(values=c("lightgreen","firebrick","grey80"), name = "AOA") +
   theme(legend.position = "bottom")
 
 pcbd + paoa
+
+# Which percentage of pixels fall outside the AOA?
+round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100
 ```
 
-About `r round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100`\% of cells fall outside the AOA. However, this mainly concerns non-forested areas. 
+About `r round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100`\% of cells fall outside the AOA. 
 
 ```{r, cache=FALSE, include=FALSE}
 # write_stars(cbd_glm_st, "results/haard_CBD.tif")

@@ -12,7 +12,8 @@ analysis comes from airborne LiDAR and Sentinel-1 & -2.
 > RAM restrictions, which can be a problem for large remote sensing data
 > stacks. Below we provide switches for this program, which allow you to
 > decide, whether you want to run all analysis steps or skip some of the
-> computationally expensive ones (e.g. extracting raster values).
+> computationally expensive ones (e.g. extracting raster values). Be
+> prepared that Binder may crash when running complex tasks.
 > Alternatively, intermediate results are loaded from existing files.
 > You may choose to download this repository and run operations locally
 > instead.
@@ -44,25 +45,29 @@ knitr::opts_chunk$set(cache=T, warning = F, message = F)
 
 ``` r
 if (skip_training_data_extraction){
-  haard = readRDS("data/cbd_training_data.rds") |> 
+  haard = readRDS(file.path(getwd(),"data",
+                            "cbd_training_data.rds")) |> 
     st_sf() |> 
     select(-c(PlotID, FC_CBH, FC_SH, FC_CC))
 } else {
   
-  predictors_path = "data/predictors_haard_10m.rds"
+  predictors_path = file.path(getwd(),"data","predictors_haard_10m.rds")
   if (! file.exists(predictors_path)){
     download.file("https://uni-muenster.sciebo.de/s/XPEk2uBClq2v3ob/download",
                   predictors_path)
   } else print("Predictor data already on disk.")
   
-  p = readRDS("data/predictors_haard_10m.rds") 
+  p = readRDS(predictors_path) 
   dim(p)
   
-  haard = st_read("data/haard_field_plot_locations.csv", crs=4326, quiet=T,
-                  options=c("X_POSSIBLE_NAMES=lon","Y_POSSIBLE_NAMES=lat")) |>
+  haard = st_read(file.path(getwd(),"data",
+                            "haard_field_plot_locations.csv"), 
+                  crs=4326, quiet=T,
+                  options=c("X_POSSIBLE_NAMES=lon",
+                            "Y_POSSIBLE_NAMES=lat")) |>
     select(plot_id, dom_spp)
   
-  FC = read.csv("data/haard_cbd_fuelcalc.csv")[-1,] |> 
+  FC = read.csv(file.path(getwd(),"data","haard_cbd_fuelcalc.csv"))[-1,] |> 
     select(PlotID, preCBD, preCBH, preSH, preCC) |> 
     mutate(PlotID = sub(x=PlotID, "-Inventory", "") |> as.numeric(),
            across(2:5, as.numeric)) |> 
@@ -71,7 +76,7 @@ if (skip_training_data_extraction){
     glimpse()
 }
 
-ft = read_stars("results/haard_surface_fuel_map.tif") |> 
+ft = read_stars(file.path(getwd(),"results","haard_surface_fuel_map.tif")) |> 
   setNames("FuelType")
 ```
 
@@ -224,62 +229,56 @@ glm_ridge = train(
 
 ### Validation log(CBD)
 
+Performance metrics
+
 ``` r
 best_lambda = glm_ridge$bestTune$lambda
-glm_ridge$results[glm_ridge$results$lambda == best_lambda,]
-```
 
-    ##    alpha   lambda     RMSE  Rsquared       MAE    RMSESD RsquaredSD     MAESD
-    ## 68     0 10.72267 0.556071 0.5552489 0.4772372 0.1789304  0.3530629 0.1258923
-
-``` r
 modelpred = glm_ridge |> 
   predict(s = best_lambda) |> 
   exp()
 testpred = glm_ridge |> 
   predict(s = best_lambda, newdata = x_test) |> 
   exp() 
-print(round(testpred,3))
+
+print(paste("R2 (model prediction vs training data) =", R2(modelpred, y_train)))
 ```
 
-    ##     1     2     3     4     5     6     7     8     9 
-    ## 0.049 0.112 0.096 0.097 0.053 0.089 0.058 0.066 0.096
+    ## [1] "R2 (model prediction vs training data) = 0.597169910562399"
 
 ``` r
-R2(modelpred, y_train) # R2 (model prediction vs training data)
+print(paste("R2 (prediction vs validation data) =", R2(testpred, y_test)))
 ```
 
-    ## [1] 0.5971699
+    ## [1] "R2 (prediction vs validation data) = 0.734889751072626"
 
 ``` r
-R2(testpred, y_test) # R2 (prediction vs validation data)
+print(paste("RMSE (model prediction vs training data) =", RMSE(modelpred, y_train)))
 ```
 
-    ## [1] 0.7348898
+    ## [1] "RMSE (model prediction vs training data) = 0.0538830618265586"
 
 ``` r
-RMSE(modelpred, y_train) # RMSE (model prediction vs training data)
+print(paste("RMSE (prediction vs validation data) =", RMSE(testpred, y_test)))
 ```
 
-    ## [1] 0.05388306
+    ## [1] "RMSE (prediction vs validation data) = 0.0690322554130355"
 
 ``` r
-RMSE(testpred, y_test) # RMSE (prediction vs validation data)
+print(paste("RMSE (intercept only model) =",RMSE(mean(y_train), y_test)))
 ```
 
-    ## [1] 0.06903226
+    ## [1] "RMSE (intercept only model) = 0.0821053783796247"
 
-``` r
-RMSE(mean(y_train), y_test) # RMSE (intercept only model)
-```
-
-    ## [1] 0.08210538
+Variable importance
 
 ``` r
 plot(varImp(glm_ridge), top=20) 
 ```
 
-![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+Residuals
 
 ``` r
 shapiro.test(residuals(glm_ridge))
@@ -295,7 +294,9 @@ shapiro.test(residuals(glm_ridge))
 hist(residuals(glm_ridge))
 ```
 
-![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+Scatter plot
 
 ``` r
 plot(log(modelpred), log(y_train), 
@@ -304,7 +305,9 @@ points(log(testpred),log(y_test), col="red")
 abline(0,1)
 ```
 
-![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-9-3.png)<!-- -->
+![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+Coefficients
 
 ``` r
 lambda_index = which(glm_ridge$results$lambda == best_lambda)
@@ -375,7 +378,7 @@ coef(glm_ridge$finalModel)[,lambda_index] |>
 
 ``` r
 if(skip_model_prediction){
-  (cbd_glm_st = read_stars("results/haard_CBD.tif") |> 
+  (cbd_glm_st = read_stars(file.path(getwd(),"results","haard_CBD.tif")) |> 
      setNames("CBD"))
 } else {
   cbd_glm = predict(glm_ridge, newdata = newx) |> 
@@ -405,13 +408,13 @@ if(skip_model_prediction){
 hist(cbd_glm_st, breaks=100)
 ```
 
-![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 AOA
 
 ``` r
 if(skip_model_prediction){
-  (AOA = read_stars("results/AOA_haard_CBD.tif") |> 
+  (AOA = read_stars(file.path(getwd(),"results","AOA_haard_CBD.tif")) |> 
      setNames("AOA"))
 } else {
   cl <- makeCluster(6)
@@ -443,20 +446,29 @@ pcbd = ggplot() +
   scale_fill_viridis_c(direction = -1) +
   theme(legend.position = "bottom")
 
-AOA = AOA |> mutate(AOA = factor(AOA, levels = c(0,1), 
-                                 labels = c("outside", "inside")))
+AOA = c(AOA, cbd_glm_st) |> 
+  mutate(AOA = ifelse(is.na(CBD), 99, AOA) |> 
+           factor(levels = c(1,0,99),
+                  labels = c("inside","outside","NB")))
+
 paoa = ggplot() + 
   geom_stars(data = AOA["AOA"], downsample = 2) +
   coord_equal() + 
   scale_x_discrete(expand = c(0, 0), name="") +
   scale_y_discrete(expand = c(0, 0), name="") +
-  scale_fill_viridis_d(option = "E")+
+  scale_fill_manual(values=c("lightgreen","firebrick","grey80"), name = "AOA") +
   theme(legend.position = "bottom")
 
 pcbd + paoa
 ```
 
-![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](04_spatial_prediction_crown_bulk_density_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
-About 60.4% of cells fall outside the AOA. However, this mainly concerns
-non-forested areas.
+``` r
+# Which percentage of pixels fall outside the AOA?
+round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100
+```
+
+    ## [1] 20.19
+
+About 20.19% of cells fall outside the AOA.

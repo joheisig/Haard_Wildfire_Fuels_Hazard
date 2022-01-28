@@ -6,11 +6,12 @@ This repository contains code and data to reproduce the analysis described in
 
 The workflow includes the following steps:
 
-1. Process satellite-based predictor data (Google Earth Engine)
-2. Process LiDAR-based predictor data including canopy fuel variables (R)
-3. Predict surface fuel types (R)
-4. Predict Crown Bulk Density (R)
-5. Run fire behavior and spread model to derive fire hazard (FlamMap)
+1. Process satellite-based predictor data <img src="https://datalab.ucdavis.edu/wp-content/uploads/2021/01/earth-engine-logo.png" title="GEE" width="20"/>
+2. Process LiDAR-based predictor data including canopy fuel variables <img src="https://opensenselabs.com/sites/default/files/inline-images/Screen%20Shot%202019-02-22%20at%202.13.40%20PM.png" alt="drawing" title="R" width="20"/>
+3. Predict surface fuel types <img src="https://opensenselabs.com/sites/default/files/inline-images/Screen%20Shot%202019-02-22%20at%202.13.40%20PM.png" alt="drawing" title="R" width="20"/>
+4. Predict Crown Bulk Density <img src="https://opensenselabs.com/sites/default/files/inline-images/Screen%20Shot%202019-02-22%20at%202.13.40%20PM.png" alt="drawing" title="R" width="20"/>
+5. Run fire behavior and spread model to derive fire hazard :fire: :globe_with_meridians:
+6. Plot figures from the publication <img src="https://opensenselabs.com/sites/default/files/inline-images/Screen%20Shot%202019-02-22%20at%202.13.40%20PM.png" alt="drawing" title="R" width="20"/>
 
 All individual steps are individually reproducible and described in more detail below.
 
@@ -22,17 +23,17 @@ Alternatively, you may skip this entire step and download the complete predictor
 ### 2. Process LiDAR-based predictor data including canopy fuel variables
 
 We use open LiDAR data to calculate forest structure and terrain variables. 
-You can view code [here on Github](R/02_LiDAR_processing.md) or run the process yourself. Alternatively, you may skip this entire step and download the [**complete predictor data**](https://uni-muenster.sciebo.de/s/XPEk2uBClq2v3ob) for this study.
+You can view to code [here on Github](R/02_LiDAR_processing.md) or run the process yourself. If you choose to run it we advise you to do so on a local machine by downloading this repository. Run `install.R` before starting `02_LiDAR_processing.Rmd`. Alternatively, you may skip this entire step and download the [**complete predictor data**](https://uni-muenster.sciebo.de/s/XPEk2uBClq2v3ob) for this study.
 
 ### 3. Predict surface fuel types
 
 Field sampling produced three custom fire behavior fuel models, each representing one dominant species (pine, red oak, and beech). To connect fuel models and their spatial distribution we classify these species using a Random Forest model and a range of LiDAR- and satellite-based predictor variables.
-You can view code and outputs [here on Github](R/03_spatial_prediction_surface_fuel_models.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main?urlpath=rstudio). Make sure to click *Session > Clear Workspace* and *Session > Restart R* before you run the analysis to prevent errors from artifacts of the last step.
+You can view code and outputs of `03_spatial_prediction_surface_fuel_models.Rmd` [here on Github](R/03_spatial_prediction_surface_fuel_models.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main?urlpath=rstudio) to run the analysis interactively in your browser.
 
 ### 4. Predict Crown Bulk Density (CBD)
 
 CBD is relevant for crown fire spread calculation but other than the remaining canopy fuel variables it is difficult to measure in the field. We use allometric equations to estimate CBD from field measurements of other forest structure variables. This data serves as reference for a Ridge regression model. Again, modeling is supported by LiDAR- and satellite-based predictor variables. 
-You can view code and outputs [here on Github](R/04_spatial_prediction_crown_bulk_density.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main/?urlpath=rstudio). Make sure to click *Session > Clear Workspace* and *Session > Restart R* before you run the analysis to prevent errors from artifacts of the last step.
+You can view code and outputs of `04_spatial_prediction_crown_bulk_density.Rmd` [here on Github](R/04_spatial_prediction_crown_bulk_density.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main/?urlpath=rstudio) to run the analysis interactively in your browser. Make sure to click *Session > Clear Workspace* and *Session > Restart R* before you run the analysis to prevent errors from artifacts of the last step.
 
 ### 5. Run fire behavior and spread model
 
@@ -42,22 +43,37 @@ The four previous steps had the purpose of preparing variables relevant to fire 
 - canopy fuel metrics (height, base height, cover, bulk density)
 - terrain (elevation, slope, aspect)
 
-Fire modeling is executed in [FlamMap](https://www.firelab.org/project/flammap) which is free to [download](https://www.firelab.org/media/709) from the Missoula Fire Sciences Laboratory website (Note: FlamMap only runs on 64-bit Microsoft Windows OS).
+Fire modeling is executed in [**FlamMap**](https://www.firelab.org/project/flammap) which is free to [download](https://www.firelab.org/media/709) from the Missoula Fire Sciences Laboratory website (Note: FlamMap only runs on 64-bit Microsoft Windows OS).
 
 Reproducing fire behavior calculations in FlamMap's GUI requires more interaction than the scripts used in previous steps. 
 
 Step-by-step-guide:
 
-1. Install FlamMap following link and instruction provided above.
-2. If you have not already downloaded this repository, do so now. All relevant files are located in the directory ***FlamMap_files***.
-3. Open FlamMap. 
-4. Click ***Landscape > Open Landscape*** and select the file ***Haard_FlamMap_landscape.lcp***.
-5. Right-click ***Analysis Area > Import Run*** and select ***Run Logs > run_log_S1.txt***.
-6. Open the run in the navigation tree on the left and give it sensible name (e.g. S1).
-7. Activate ***Use Custom Fuels*** and select ***Fuels > custom_fuels_haard.fmd***.
-8. Choose ***Winds > Gridded Wind Files***. Select appropriate wind direction and wind speed files in the ***Wind*** directory depending on the scenario you selected in step 5.
-9. All other options are defined by the log file. Switch to tab **Fire Behavior Options** and click ***Launch Basic FB***.
-10. Switch to tab **Minimum Travel Time**, click ***Ignitions > Fire Size List File*** and select ***FireSizeList10000.csv***.
-11. Click ***Barriers > Barriers File*** and select ***Barriers > roads.shp***.
-12. Click ***Launch MTT*** to start simulations of fire spread. 
+- 5.1. Install FlamMap following instructions provided by the links above.
+- 5.2. If you have not already downloaded this repository, do so now. All relevant files are located in the directory ***FlamMap_files***.
+- 5.3. Open FlamMap. 
+- 5.4. Click ***Landscape > Open Landscape*** and select the file ***Haard_FlamMap_landscape.lcp***.
+- 5.5. Click ***Analysis Area > Import Run*** and select ***Run Logs > run_log_S1.txt***.
+- 5.6. Open the run in the navigation tree on the left and give it sensible name (e.g. S1).
+- 5.7. Activate ***Use Custom Fuels*** and select ***Fuels > custom_fuels_haard.fmd***.
+- 5.8. Choose ***Winds > Gridded Wind Files***. Select appropriate wind direction and wind speed files in the ***Wind*** directory depending on the scenario you selected in step 5.
+- 5.9. All other options are defined by the log file. Switch to tab **Fire Behavior Options** and click ***Launch Basic FB***. Outputs will appear in navigation tree and in the map pane.
+- 5.10. Switch to tab **Minimum Travel Time**, click ***Ignitions > Fire Size List File*** and select ***FireSizeList10000.csv***.
+- 5.11. Click ***Barriers > Barriers File*** and select ***Barriers > roads.shp***.
+- 5.12. Click ***Launch MTT*** to start simulations of fire spread. 
+- 5.13. Repeat steps 5.5 through 5.12 for each scenario you want to reproduce.
+
+## 6. Plot figures from the publication
+
+All figures in our paper can be reproduced (even without running analysis steps 1-5). Plotting routines are divided into several scripts all starting their file name with "06_". Data displayed in plots includes
+
+- study area overview and field sampling locations
+- surface fuels field data and prediction
+- CBD field data and prediction
+- wind station data and WindNinja outputs
+- fire behavior, conditional burn probability, and fire hazard
+
+Feel free to contact `jheisig@uni-muenster.de` for questions or feedback!
+
+
 

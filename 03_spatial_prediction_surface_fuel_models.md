@@ -11,7 +11,8 @@ and Sentinel-1 & -2.
 > RAM restrictions, which can be a problem for large remote sensing data
 > stacks. Below we provide switches for this program, which allow you to
 > decide, whether you want to run all analysis steps or skip some of the
-> computationally expensive ones (e.g. extracting raster values).
+> computationally expensive ones (e.g. extracting raster values). Be
+> prepared that Binder may crash when running complex tasks.
 > Alternatively, intermediate results are loaded from existing files.
 > You may choose to download this repository and run operations locally
 > instead.
@@ -29,6 +30,7 @@ library(CAST)
 select = dplyr::select
 library(cvms)
 library(doParallel)
+library(patchwork)
 })
 knitr::opts_chunk$set(cache=T, warning = F, message = F)
 ```
@@ -39,18 +41,19 @@ knitr::opts_chunk$set(cache=T, warning = F, message = F)
 
 ``` r
 if (skip_training_data_extraction){
-  train = readRDS("data/surface_fuels_training_data.rds") |> 
+  train = readRDS(file.path(getwd(),"data",
+                            "surface_fuels_training_data.rds")) |> 
     st_sf()
 } else {
   
-  predictors_path = "data/predictors_haard_10m.rds"
+  predictors_path = file.path(getwd(),"data","predictors_haard_10m.rds")
   if (! file.exists(predictors_path)){
     download.file("https://uni-muenster.sciebo.de/s/XPEk2uBClq2v3ob/download",
                   predictors_path)
   } else print("Predictor data already on disk.")
     
-  p = read_rds("data/predictors_haard_10m.rds")
-  t = st_read("data/LCC_train.geojson", quiet=T) |> 
+  p = readRDS(predictors_path)
+  t = st_read(file.path(getwd(),"data","LCC_train.geojson"), quiet=T) |> 
     st_set_crs(st_crs(p)) |> 
     st_crop(p) |> 
     mutate(spp = case_when(spp %in% c("Agri", "Bare", 
@@ -112,12 +115,16 @@ test = tr |> setdiff(train)
 
 ``` r
 # NOTE:
-# If you choose to run the Forward-Feature_selection process, be prepared that
-# this may take 2-3 hours as ~ 14.000 combinations of predictor variables are
-# tested. If run you will find the progress log in the drop-down window below the # code.
+# If you choose to run the Forward-Feature-Selection
+# process, be prepared that this may take 2-3 hours 
+# as ~ 14.000 combinations of predictor variables are
+# tested. Binder may crash during this process, so we
+# advise to run it on your local machine. Afterwards
+# you will find the progress log in the drop-down 
+# window below the code.
 
 if (skip_model_training){ 
-  f = readRDS("results/models/ffs_model_4class.rds")
+  f = readRDS(file.path(getwd(),"results","models","ffs_model_4class.rds"))
   
 } else {
   tc = trainControl("cv", 5) # set up 5-fold random CV
@@ -290,34 +297,40 @@ confusionMatrix(pred, as.factor(test$spp))
 
 ``` r
 if (skip_model_prediction){
-  lcc = read_stars("results/haard_surface_fuel_map.tif") |> 
+  lcc = read_stars(file.path(getwd(),"results",
+                             "haard_surface_fuel_map.tif")) |> 
     setNames("prediction") |> 
-    mutate(prediction = case_when(prediction == 4 ~ "Non-Burnable",
-                                prediction == 2 ~ "Pine",
-                                prediction == 1 ~ "Beech",
-                                prediction == 3 ~ "Red Oak",
-                                TRUE ~ as.character(prediction)) |> 
+    mutate(prediction = 
+             case_when(prediction == 4 ~ "Non-Burnable",
+                       prediction == 2 ~ "Pine",
+                       prediction == 1 ~ "Beech",
+                       prediction == 3 ~ "Red Oak",
+                       TRUE ~ as.character(prediction)) |> 
              factor(levels = c("Beech", "Pine", 
                                "Red Oak", "Non-Burnable")))
 } else {
   if (!file.exists("")) download.file()
   #download predictor
-  p = read_rds("data/predictors_haard_10m.rds") |> 
+  p = read_rds(file.path(getwd(),"data",
+                         "predictors_haard_10m.rds")) |> 
     replace(is.na(.), 0)
   
   # spatial prediction
   lcc = predict(split(p, 3), f)
   
   lcc = lcc %>% 
-    mutate(pred_sum = case_when(prediction %in% c("other") ~ "Non-Burnable",
-                                prediction == "Pi" ~ "Pine",
-                                prediction == "Be" ~ "Beech",
-                                prediction == "RO" ~ "Red Oak",
-                                TRUE ~ as.character(prediction)),
-           pred_sum = factor(pred_sum, levels = c("Beech", "Pine", 
-                                                  "Red Oak", "Non-Burnable")))
+    mutate(pred_sum = 
+             case_when(prediction %in% c("other") ~ "Non-Burnable",
+                       prediction == "Pi" ~ "Pine",
+                       prediction == "Be" ~ "Beech",
+                       prediction == "RO" ~ "Red Oak",
+                       TRUE ~ as.character(prediction)),
+           pred_sum = factor(pred_sum, 
+                             levels = c("Beech", "Pine", 
+                                        "Red Oak", "Non-Burnable")))
   write_stars(lcc, layer = 2, overwrite=T,
-              dsn = "results/haard_surface_fuel_map.tif")
+              dsn = file.path(getwd(),"results",
+                              "haard_surface_fuel_map.tif"))
 }
 
 lcc
@@ -344,32 +357,44 @@ gg = ggplot() +
   scale_x_discrete(expand=c(0,0)) +
   scale_y_discrete(expand=c(0,0))
 
-gg + 
+pfm = gg + 
   geom_stars(data=lcc[1,,]) +
-  scale_fill_manual(values=c("gold2", "springgreen4", 
-                             "palevioletred1", "grey80"), 
-                    name="Fuel Models") 
+  scale_fill_manual(name="Fuel Models",
+                    values=c("gold2", "springgreen4", 
+                             "palevioletred1", "grey80"))
 ```
-
-![](03_spatial_prediction_surface_fuel_models_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 Area of Applicability
 
 ``` r
 if (skip_model_prediction){
-  AOA = read_stars("results/AOA_haard_surface_fuel_map.tif") |> 
+  AOA = read_stars(file.path(getwd(),"results",
+                             "AOA_haard_surface_fuel_map.tif")) |> 
     setNames("AOA")
 } else {
   AOA = aoa(model=f, newdata=p)
-  write_stars(AOA["AOA"],"results/tifs/AOA_haard_fuelmodel.tif")
+  write_stars(AOA["AOA"],file.path(getwd(),"results",
+                                   "AOA_haard_fuelmodel.tif"))
 }
 
 AOA = mutate(AOA, AOA = factor(AOA, levels = c(0,1), 
                                labels = c("outside","inside")))
 
-gg +
+paoa = gg +
   geom_stars(data = AOA["AOA"]) +
   scale_fill_manual(values=c("firebrick","lightgreen"), name = "AOA")
+
+pfm + paoa
 ```
 
 ![](03_spatial_prediction_surface_fuel_models_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
+``` r
+# Which percentage of pixels fall outside the AOA?
+round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100
+```
+
+    ## [1] 11.44
+
+About 11.44% of cells fall outside the AOA. However, this mainly
+concerns non-forested areas.

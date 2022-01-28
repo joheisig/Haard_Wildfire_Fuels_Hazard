@@ -7,7 +7,7 @@ output: github_document
 This analysis identifies 3 fuel types in a managed temperate forest dominated by either Scots pine, red oak or European beech. Field samples are used for model training. Predictor data comes from airborne LiDAR and Sentinel-1 & -2.
 
 > NOTE:
-> Binder is great for reproducing analysis in R. However, it has RAM restrictions, which can be a problem for large remote sensing data stacks. Below we provide switches for this program, which allow you to decide, whether you want to run all analysis steps or skip some of the computationally expensive ones (e.g. extracting raster values). Alternatively, intermediate results are loaded from existing files. You may choose to download this repository and run operations locally instead.
+> Binder is great for reproducing analysis in R. However, it has RAM restrictions, which can be a problem for large remote sensing data stacks. Below we provide switches for this program, which allow you to decide, whether you want to run all analysis steps or skip some of the computationally expensive ones (e.g. extracting raster values). Be prepared that Binder may crash when running complex tasks. Alternatively, intermediate results are loaded from existing files. You may choose to download this repository and run operations locally instead.
 
 ```{r}
 skip_training_data_extraction = T
@@ -22,6 +22,7 @@ library(CAST)
 select = dplyr::select
 library(cvms)
 library(doParallel)
+library(patchwork)
 })
 knitr::opts_chunk$set(cache=T, warning = F, message = F)
 ```
@@ -89,9 +90,13 @@ test = tr |> setdiff(train)
 ### Model training
 ```{r, eval=FALSE}
 # NOTE:
-# If you choose to run the Forward-Feature_selection process, be prepared that
-# this may take 2-3 hours as ~ 14.000 combinations of predictor variables are
-# tested. If run you will find the progress log in the drop-down window below the # code.
+# If you choose to run the Forward-Feature-Selection
+# process, be prepared that this may take 2-3 hours 
+# as ~ 14.000 combinations of predictor variables are
+# tested. Binder may crash during this process, so we
+# advise to run it on your local machine. Afterwards
+# you will find the progress log in the drop-down 
+# window below the code.
 
 if (skip_model_training){ 
   f = readRDS(file.path(getwd(),"results","models","ffs_model_4class.rds"))
@@ -119,6 +124,13 @@ if (skip_model_training){
 <details>
   <summary>show FFS progress</summary>
 ```{r echo=FALSE}
+# This code chunk is identical to the one above.
+# It is wrapped in a drop-down button to hide
+# the progress report but keep it in the background.
+# When running the entire script at once (knitting),
+# only this second chunk is executed, the first one
+# only displays code.
+
 if (skip_model_training){ 
   f = readRDS(file.path(getwd(),"results","models","ffs_model_4class.rds"))
   
@@ -277,7 +289,7 @@ gg = ggplot() +
   scale_x_discrete(expand=c(0,0)) +
   scale_y_discrete(expand=c(0,0))
 
-gg + 
+pfm = gg + 
   geom_stars(data=lcc[1,,]) +
   scale_fill_manual(name="Fuel Models",
                     values=c("gold2", "springgreen4", 
@@ -300,7 +312,14 @@ if (skip_model_prediction){
 AOA = mutate(AOA, AOA = factor(AOA, levels = c(0,1), 
                                labels = c("outside","inside")))
 
-gg +
+paoa = gg +
   geom_stars(data = AOA["AOA"]) +
   scale_fill_manual(values=c("firebrick","lightgreen"), name = "AOA")
+
+pfm + paoa
+
+# Which percentage of pixels fall outside the AOA?
+round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100
 ```
+
+About `r round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100`\% of cells fall outside the AOA. However, this mainly concerns non-forested areas. 
