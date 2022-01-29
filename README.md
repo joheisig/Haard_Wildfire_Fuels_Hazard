@@ -2,7 +2,7 @@
 
 This repository contains code and data to reproduce the analysis described in
 
-> Heisig, J., Olson, E., Pebesma, E. (2022): Predicting Wildfire Fuels and Hazard in a Central European Temperate Forest Using Active and Passive Remote Sensing. Fire. xxx. doi/xxx. link.
+> Heisig, J., Olson, E., Pebesma, E. (2022): Predicting Wildfire Fuels and Hazard in a Central European Temperate Forest Using Active and Passive Remote Sensing. Fire. 2022. doi/xxx. link.
 
 The workflow includes the following steps:
 
