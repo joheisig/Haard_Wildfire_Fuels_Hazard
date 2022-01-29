@@ -1,15 +1,17 @@
 library(rdwd)
 library(dplyr)
 library(sf)
-library(mapview)
 library(openair)
 data("geoIndex")
 data("metaIndex")
 
 ## Wind speed and direction from hourly observations
-
-link <- selectDWD("Haltern (Wasserwerk)", res="hourly", var="wind", per="h")
-wind_dat <- dataDWD(link, dir=tempdir())
+dat = list.files(file.path(getwd(),"data"), pattern = "hourly_wind", full.names = T)
+if (length(dat) > 0) { wind_dat = readDWD(dat)
+} else {
+  link <- selectDWD("Haltern (Wasserwerk)", res="hourly", var="wind", per="h")
+  wind_dat <- dataDWD(link, dir=file.path(getwd(),"data"))
+}
 
 select(wind_dat, MESS_DATUM, F, D) |> 
 mutate(ws = F,
