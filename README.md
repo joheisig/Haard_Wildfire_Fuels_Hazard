@@ -65,12 +65,12 @@ Step-by-step-guide:
 
 ## 6. Plot figures from the publication
 
-All figures in our paper can be reproduced (even without running analysis steps 1-5). Plotting routines are divided into several scripts all starting their file name with "06_". Data displayed in plots includes
+All figures in our paper can be reproduced (even without running analysis steps 1-5). Plotting routines are divided into several scripts following this nameing convention: `06_*.R`. They can be executed interactively via [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main?urlpath=rstudio). Data displayed in plots includes
 
 - study area overview and field sampling locations
-- surface fuels field data and prediction
-- CBD field data and prediction
-- wind station data and WindNinja outputs
+- surface fuels field data and spatial prediction
+- CBD field data and spatial prediction
+- wind station data and spatial WindNinja outputs
 - fire behavior, conditional burn probability, and fire hazard
 
 Outputs in PNG format can be found in the `figures` directory.
