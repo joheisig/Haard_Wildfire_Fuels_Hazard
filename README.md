@@ -1,10 +1,12 @@
 ## Wildfire Fuels and Hazard predction in the Haard forest
 
-This repository contains code and data to reproduce the analysis described in
+This repository contains code and data to reproduce the analysis described in the paper below. 
+**Note: The manuscript is currently under review.**
 
 > Heisig, J., Olson, E., Pebesma, E. (2022): Predicting Wildfire Fuels and Hazard in a Central European Temperate Forest Using Active and Passive Remote Sensing. Fire. 2022. doi/xxx. link.
 
-The workflow includes the following steps:
+
+The workflow of our fire hazard analysis includes the following steps:
 
 1. Process satellite-based predictor data <img src="https://image.pngaaa.com/772/546772-middle.png" title="GEE" width="35"/>
 2. Process LiDAR-based predictor data including canopy fuel variables <img src="https://www.clipartmax.com/png/middle/13-137348_logo-r-programming.png" alt="drawing" title="R" width="25"/>
@@ -73,7 +75,7 @@ All figures in our paper can be reproduced (even without running analysis steps 
 - wind station data and spatial WindNinja outputs
 - fire behavior, conditional burn probability, and fire hazard
 
-Outputs in PNG format can be found in the `figures` directory.
+Outputs in PNG format can be found in the [`figures`](figures) directory.
 
 Feel free to contact `jheisig@uni-muenster.de` for questions or feedback!
 
