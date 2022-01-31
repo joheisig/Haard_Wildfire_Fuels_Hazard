@@ -23,17 +23,17 @@ Alternatively, you may skip this entire step and download the complete predictor
 ### 2. Process LiDAR-based predictor data including canopy fuel variables
 
 We use open LiDAR data to calculate forest structure and terrain variables. 
-You can view to code [here on Github](R/02_LiDAR_processing.md) or run the process yourself. If you choose to run it we advise you to do so on a local machine by downloading this repository. Run `install.R` before starting `02_LiDAR_processing.Rmd`. Alternatively, you may skip this entire step and download the [**complete predictor data**](https://uni-muenster.sciebo.de/s/XPEk2uBClq2v3ob) for this study.
+You can view to code [here on Github](02_LiDAR_processing.md) or run the process yourself. If you choose to run it we advise you to do so on a local machine by downloading this repository. Run `install.R` before starting `02_LiDAR_processing.Rmd`. Alternatively, you may skip this entire step and download the [**complete predictor data**](https://uni-muenster.sciebo.de/s/XPEk2uBClq2v3ob) for this study.
 
 ### 3. Predict surface fuel types
 
 Field sampling produced three custom fire behavior fuel models, each representing one dominant species (pine, red oak, and beech). To connect fuel models and their spatial distribution we classify these species using a Random Forest model and a range of LiDAR- and satellite-based predictor variables.
-You can view code and outputs of `03_spatial_prediction_surface_fuel_models.Rmd` [here on Github](R/03_spatial_prediction_surface_fuel_models.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main?urlpath=rstudio) to run the analysis interactively in your browser.
+You can view code and outputs of `03_spatial_prediction_surface_fuel_models.Rmd` [here on Github](03_spatial_prediction_surface_fuel_models.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main?urlpath=rstudio) to run the analysis interactively in your browser.
 
 ### 4. Predict Crown Bulk Density (CBD)
 
 CBD is relevant for crown fire spread calculation but other than the remaining canopy fuel variables it is difficult to measure in the field. We use allometric equations to estimate CBD from field measurements of other forest structure variables. This data serves as reference for a Ridge regression model. Again, modeling is supported by LiDAR- and satellite-based predictor variables. 
-You can view code and outputs of `04_spatial_prediction_crown_bulk_density.Rmd` [here on Github](R/04_spatial_prediction_crown_bulk_density.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main/?urlpath=rstudio) to run the analysis interactively in your browser. Make sure to click *Session > Clear Workspace* and *Session > Restart R* before you run the analysis to prevent errors from artifacts of the last step.
+You can view code and outputs of `04_spatial_prediction_crown_bulk_density.Rmd` [here on Github](04_spatial_prediction_crown_bulk_density.md) or [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joheisig/Haard_Wildfire_Fuels_Hazard/main/?urlpath=rstudio) to run the analysis interactively in your browser. Make sure to click *Session > Clear Workspace* and *Session > Restart R* before you run the analysis to prevent errors from artifacts of the last step.
 
 ### 5. Run fire behavior and spread model
 
