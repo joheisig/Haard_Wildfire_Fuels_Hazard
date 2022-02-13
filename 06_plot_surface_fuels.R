@@ -66,7 +66,9 @@ fm = read_stars(file.path(getwd(),"results","haard_surface_fuel_map.tif")) |>
 
 aoa.fm = read_stars(file.path(getwd(),"results","AOA_haard_surface_fuel_map.tif")) |> 
   setNames("AOA") |> 
-  mutate(AOA = factor(AOA, labels = c("outside", "inside")))
+  c(fm["FuelType"]) |>  
+  mutate(AOA = ifelse(FuelType == "NB", NaN, AOA),
+         AOA = factor(AOA, levels = c(0,1,NaN), labels = c("outside", "inside", "NB")))
 
 l.pos = "right"
 
