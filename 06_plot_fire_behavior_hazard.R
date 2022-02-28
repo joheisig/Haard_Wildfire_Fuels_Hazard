@@ -1,11 +1,18 @@
+#====================================================================
+# This script produces Figures 3, 9, 10, and 11 from the publication
+# 
+# Heisig, J.; Olson, E.; Pebesma, E. Predicting Wildfire Fuels 
+# and Hazard in a Central European Temperate Forest Using Active 
+# and Passive Remote Sensing. Fire 2022, 5, 29. 
+# https://doi.org/10.3390/fire5010029
+#====================================================================
+
 library(stars)
 library(dplyr)
 library(tidyr)
 library(viridis)
 library(ggplot2)
 library(patchwork)
-
-#file.path(getwd(),
 
 path = file.path(getwd(),"FlamMap_files", "FlamMap_output")
 
@@ -196,7 +203,7 @@ b4 = plb + geom_stars(data=s7[3])
 mttpath = file.path(getwd(),"figures","CFL_CBP_2x4_Legend_right.png")
 ggsave(mttpath,  height = 15, width = 10.5, units = "cm")
 
-#------------- FH -------------------------------------
+#------------- FH ----------------------
 
 # IFTDSS color scheme (blue to yellow to red)
 fhpal <- c('#e0001b','#f4853b','#faf96a', '#93ffbc','#4adcff',"grey80")
@@ -232,7 +239,7 @@ Theme = theme(plot.margin = margin(5,0,5,5),
 fhpath = file.path(getwd(),"figures","fire_hazard_2x2.png")
 ggsave(fhpath, height = 10.8, width = 11, units = "cm")
 
-# WindNinja outputs --------------------------------
+#------------- WindNinja outputs --------------------------------
 
 windpath = file.path(getwd(),"FlamMap_files", "Wind")
 wd = read_stars(file.path(windpath,"wind_dir_S1-2-5-6.asc")) |> setNames("WD")

@@ -7,12 +7,15 @@ output: github_document
 This analysis predicts Crown Bulk Density, a canopy fuel variable relevant to crown fire spread. It is difficult to sample in the field and therefore estimated using measurements of other forest structure variables and allometric equations. Predictor data for this regression analysis comes from airborne LiDAR and Sentinel-1 & -2.
 
 > NOTE:
-> Binder is great for reproducing analysis in R. However, it has RAM restrictions, which can be a problem for large remote sensing data stacks. Below we provide switches for this program, which allow you to decide, whether you want to run all analysis steps or skip some of the computationally expensive ones (e.g. extracting raster values). Be prepared that Binder may crash when running complex tasks. Alternatively, intermediate results are loaded from existing files. You may choose to download this repository and run operations locally instead.
+> Binder is great for reproducing analysis in R. However, it has RAM restrictions, which can be a problem for large remote sensing data stacks. Below we provide switches for this program, which allow you to decide, whether you want to run all analysis steps or skip some of the computationally expensive ones (e.g. extracting raster values). Be prepared that Binder may crash when running complex tasks. If you run this script on Binder we suggest you stick with the switch settings below (skip.. = TRUE), which allows intermediate results to be loaded from existing files. Alternatively, you may choose to download this repository and run operations locally instead. In this case feel free to change switches below TRUE to FALSE.
+
+Analysis switches:
+```{r switches}
+skip_training_data_extraction = TRUE
+skip_model_prediction = TRUE
+```
 
 ```{r}
-skip_training_data_extraction = T
-skip_model_prediction = T
-
 suppressPackageStartupMessages({
 library(glmnet)
 library(caret)
@@ -322,7 +325,11 @@ paoa = ggplot() +
   theme(legend.position = "bottom")
 
 pcbd + paoa
+```
 
+This plot refers to Figure 8 in our paper.
+
+```{r}
 # Which percentage of pixels fall outside the AOA?
 round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100
 ```
@@ -334,3 +341,11 @@ About `r round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100`\% of cells fa
 # write_stars(AOA, layer = "AOA", "results/AOA_haard_CBD.tif")
 ```
 
+---
+
+*From section 4.2 in [Heisig et al. 2022](https://doi.org/10.3390/fire5010029):*
+
+> Ridge regression analysis was applied to predict CBD for the Haard forest. CV selected an optimal regularization parameter lambda of 10.7. Overall, model performance was poor which was expected, considering the small number of training samples. A model-R² of 0.59 with a RMSE of 0.054 was reported. Independent validation samples produced a higher R² of 0.73, while RMSE degraded to 0.069. Although R² is acceptable, RMSEs are large, considering a CBD training sample mean of 0.095. Differences in model performance and validation scores indicate the introduction of bias by ridge regression.
+> Variable importance scores indicated strong dependence on LiDAR-derived vertical structure metrics and optical predictor data. The most relevant predictors included $C_{25}$, $B05_{p10}$, $Z_{p20}$, ${NDVI}_{p90}$, $B04_{p90}$, and $DEM$. Further, the nine next relevant variables in the ranking, $Z_{iqr}$, $Z_{pcum80}$, and $Z_{p65,...,95}$, all describe vegetation structure in the upper third of the tree. This coincides with relative heights at which CBD can be found at the maximum.
+> We tested adding training samples from NFI plots (n = 15) but were not able to improve the model. On average, their derived CBD values were significantly smaller than the existing values based on field sampling. NFI surveys include records of species and CH among many other observations. However, they do not include CBH. Supplementing NFI tree lists, for example, with LiDAR-derived CBH at 10 m spatial resolution, is rather inaccurate, especially when considering plots with heterogeneous species composition, age, and vertical structure.
+> Spatial prediction and AOA for CBD are shown in Figure 8. CBD values range from 0 to 0.3. They roughly follow the tree species classification, while higher densities can be observed for pine than for beech and red oak. Anomalies in CBD within homogeneous patches dominated by a single species are related to structural differences. Considering only forested pixels, 20% fall outside the AOA. This may again be explained by the low number of training samples. A significant portion is located in areas with steeper slopes.

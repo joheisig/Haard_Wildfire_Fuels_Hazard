@@ -1,3 +1,12 @@
+#==============================================================
+# This script produces Figure 1 from the publication
+# 
+# Heisig, J.; Olson, E.; Pebesma, E. Predicting Wildfire Fuels 
+# and Hazard in a Central European Temperate Forest Using Active 
+# and Passive Remote Sensing. Fire 2022, 5, 29. 
+# https://doi.org/10.3390/fire5010029
+#==============================================================
+
 library(dplyr)
 library(stars)
 library(sf)

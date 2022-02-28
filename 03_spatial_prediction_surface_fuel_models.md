@@ -12,16 +12,22 @@ and Sentinel-1 & -2.
 > stacks. Below we provide switches for this program, which allow you to
 > decide, whether you want to run all analysis steps or skip some of the
 > computationally expensive ones (e.g. extracting raster values). Be
-> prepared that Binder may crash when running complex tasks.
-> Alternatively, intermediate results are loaded from existing files.
-> You may choose to download this repository and run operations locally
-> instead.
+> prepared that Binder may crash when running complex tasks. If you run
+> this script on Binder we suggest you stick with the switch settings
+> below (skip.. = TRUE), which allows intermediate results to be loaded
+> from existing files. Alternatively, you may choose to download this
+> repository and run operations locally instead. In this case feel free
+> to change switches below TRUE to FALSE.
+
+Analysis switches:
 
 ``` r
-skip_training_data_extraction = T
-skip_model_training = T
-skip_model_prediction = T
+skip_training_data_extraction = TRUE
+skip_model_training = TRUE
+skip_model_prediction = TRUE
+```
 
+``` r
 suppressPackageStartupMessages({
 library(stars)
 library(dplyr)
@@ -68,7 +74,7 @@ if (skip_training_data_extraction){
   train = st_join(train, t) %>% st_drop_geometry()
 }
 
-plot(train)
+plot(train[1])
 ```
 
 ![](03_spatial_prediction_surface_fuel_models_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
@@ -205,17 +211,21 @@ The best model has a hyperparamter `mtry` of 2.
 #### Code
 
 ``` r
-tc = trainControl("cv", 5)
-cl <- makeCluster(6)
-registerDoParallel(cl)
-set.seed(1)
-model_all <- train(select(train, -spp),
-                   as.factor(train$spp),
-                   method = "rf", num.trees = 500,
-                   tuneGrid = data.frame("mtry"=f$finalModel$mtry), 
-                   importance = TRUE,
-                   trControl = tc)
-stopCluster(cl)
+if (! skip_model_training){
+  tc = trainControl("cv", 5)
+  cl <- makeCluster(6)
+  registerDoParallel(cl)
+  set.seed(1)
+  model_all <- train(select(train, -spp),
+                     as.factor(train$spp),
+                     method = "rf", num.trees = 500,
+                     tuneGrid = data.frame("mtry"=f$finalModel$mtry), 
+                     importance = TRUE,
+                     trControl = tc)
+  stopCluster(cl)
+} else {
+  model_all <- readRDS(file.path(getwd(),"results", "models","rf_model_4class_all.rds"))
+}
 ```
 
 #### Variable Importance
@@ -389,6 +399,8 @@ pfm + paoa
 
 ![](03_spatial_prediction_surface_fuel_models_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
+This plot refers to Figure 6 of our paper.
+
 ``` r
 # Which percentage of pixels fall outside the AOA?
 round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100
@@ -398,3 +410,39 @@ round(sum(AOA$AOA == 'outside') / length(AOA$AOA),4)*100
 
 About 11.44% of cells fall outside the AOA. However, this mainly
 concerns non-forested areas.
+
+------------------------------------------------------------------------
+
+*From section 4.1 in [Heisig et
+al. 2022](https://doi.org/10.3390/fire5010029):*
+
+> “The FFS process found the best performing solution among 13,924
+> possible combinations of predictor variables. CV selected an optimal
+> mtry of 2 and reported an OA of 0.971 with a Kappa of 0.967. The final
+> model consisted of five variables, with *B*05<sub>*p*90</sub> being
+> the most important one. *B*06<sub>*p*90</sub> and Rumple also scored
+> high variable importance, followed by *B*05<sub>*p*10</sub>. Finally,
+> *Z*<sub>*c**o**v**g*</sub> was only able to add very little
+> improvement to the model. FFS successfully reduced the number of
+> predictors significantly (5 vs. 119) while keeping model performance
+> high. For comparison, a classic random forest model was built, using
+> all available predictors. Performance was still high, but both OA and
+> Kappa decreased by 2.8% and 3.8%, respectively. The model confusion
+> matrix revealed a perfect classification of non-burnable areas. This
+> may be explained by noticeable differences in the spectral signatures
+> and vertical structure of non-burnable land cover (e.g., water bodies,
+> urban area) compared to forest vegetation. Minor confusion was found
+> between tree species classes. Errors ranged between 4% and 8%, with
+> beech having slightly larger errors than pine and red oak. Previously
+> separated validation samples (n = 90) were tested on the model
+> prediction. All samples were classified correctly, yielding an OA and
+> Kappa of 1.0. Overall, the fuel model classification results were very
+> good. However, this could be expected, as it was a simple modeling
+> task combined with a large range of powerful predictors. The final
+> prediction is shown in Figure 6 alongside with the AOA. The
+> dissimilarity of predictors from the training samples was only
+> critical in areas less relevant for fire spread. Fewer than 1% of
+> burnable pixels fell outside the AOA and represented mainly roads,
+> bare ground or vegetation along water bodies. These areas are often
+> located in close proximity to the forest edge or to existing fire
+> barriers, which makes them less relevant for fire spread modeling.”
