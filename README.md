@@ -14,7 +14,7 @@ The workflow of our fire hazard analysis includes the following steps:
 5. Run fire behavior and spread model to derive fire hazard :fire: :globe_with_meridians:
 6. Plot figures from the publication <img src="https://www.clipartmax.com/png/middle/13-137348_logo-r-programming.png" alt="drawing" title="R" width="25"/>
 
-All steps are individually reproducible and described in more detail below.
+All steps are individually reproducible and described in more detail below. All spatial data is projected in Coordinate Reference System EPSG 25832 (UTM Zone 32 North).
 
 ### 1. Process satellite-based predictor data
 
